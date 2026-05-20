@@ -135,23 +135,27 @@ def get_bjdong_codes(sido_code: str, sigungu_code: str) -> list[tuple[str, str]]
     """
     try:
         url = f"https://grpc-proxy-server-mkvo6j4wsq-du.a.run.app/v1/regcodes"
+        
+        def fetch_for_pattern(pattern):
+            r = requests.get(url, params={"regcode_pattern": pattern}, timeout=5)
+            data = r.json()
+            pairs = []
+            for item in data.get("regcodes", []):
+                code = item["code"]
+                if len(code) == 10 and not code.endswith("00000"):
+                    sigungu = code[:5]
+                    bjdong = code[5:10]
+                    if (sigungu, bjdong) not in pairs:
+                        pairs.append((sigungu, bjdong))
+            return pairs
+
         if str(sigungu_code).endswith("000"):
-            params = {"regcode_pattern": f"{sido_code}*"}
-        else:
-            params = {"regcode_pattern": f"{sigungu_code}*"}
+            return fetch_for_pattern(f"{sido_code}*")
             
-        r = requests.get(url, params=params, timeout=5)
-        data = r.json()
-        pairs = []
-        for item in data.get("regcodes", []):
-            code = item["code"]
-            # 법정동 코드 = 10자리, 마지막 5자리가 법정동
-            if len(code) == 10 and not code.endswith("00000"):
-                sigungu = code[:5]
-                bjdong = code[5:10]
-                if (sigungu, bjdong) not in pairs:
-                    pairs.append((sigungu, bjdong))
-        return pairs
+        res = fetch_for_pattern(f"{sigungu_code}*")
+        if not res and len(str(sigungu_code)) == 5 and str(sigungu_code).endswith("0"):
+            res = fetch_for_pattern(f"{sigungu_code[:4]}*")
+        return res
     except Exception:
         return []
 
