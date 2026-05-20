@@ -28,7 +28,11 @@ from analyzer import run_analysis
 # ── .env에서 API 키 자동 로드 ──
 load_dotenv()
 DATA_API_KEY = os.getenv("DATA_API_KEY", "")
+if not DATA_API_KEY and "DATA_API_KEY" in st.secrets:
+    DATA_API_KEY = st.secrets["DATA_API_KEY"]
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY", "")
+if not KAKAO_API_KEY and "KAKAO_API_KEY" in st.secrets:
+    KAKAO_API_KEY = st.secrets["KAKAO_API_KEY"]
 
 # ────────────────────────────────────────────
 # 페이지 기본 설정

@@ -138,7 +138,7 @@ def _make_row(row: pd.Series, risk_type: str, delay_months, land_df: pd.DataFram
     hhld = str(row.get("totHhldCnt", "")).strip()
     area = str(row.get("totArea", "")).strip()
     try:
-        area_fmt = f"{float(area):,.0f}㎡" if area and area not in ("0", "") else ""
+        area_fmt = f"{float(area) * 0.3025:,.0f}평" if area and area not in ("0", "") else ""
     except Exception:
         area_fmt = ""
     scale = " / ".join(filter(None, [
