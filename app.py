@@ -219,6 +219,14 @@ if search_btn:
         st.session_state["land_trade_df"] = land_trade_df
         progress.progress(85, text="⑤ 위험 사업장 분석 중...")
 
+        # [4.5] 분석 기간 필터링 (최근 N개월 내 인허가 받은 건만 분석)
+        if not housing_df.empty:
+            from datetime import date
+            housing_df["_app_temp"] = pd.to_datetime(housing_df["apprvDay"], format="%Y%m%d", errors="coerce")
+            cutoff_date = pd.Timestamp(date.today()) - pd.DateOffset(months=period_months)
+            housing_df = housing_df[housing_df["_app_temp"].isna() | (housing_df["_app_temp"] >= cutoff_date)].copy()
+            housing_df.drop(columns=["_app_temp"], errors="ignore", inplace=True)
+
         # [5] 분석 실행
         result_df = run_analysis(
             housing_df, subscription_df, land_trade_df,

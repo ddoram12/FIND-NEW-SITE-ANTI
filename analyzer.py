@@ -71,9 +71,8 @@ def run_analysis(
     df["_stc"] = df["stcnsDay"].apply(_to_ts)
     df["_use"] = df["useInsptDay"].apply(_to_ts)
 
-    # ── 완공 건물 제외 (사용승인일 있고 6개월 이상 지남) ──
-    use_elapsed = df["_use"].apply(lambda d: (today - d).days / 30.44 if pd.notna(d) else None)
-    df = df[~(df["_use"].notna() & (use_elapsed > 6))].copy()
+    # ── 완공 건물 제외 (사용승인일이 등록된 경우 전면 제외) ──
+    df = df[df["_use"].isna()].copy()
 
     # ── 인허가일 없는 것 제외 ──
     df = df[df["_app"].notna()].copy()

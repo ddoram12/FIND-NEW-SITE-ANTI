@@ -247,40 +247,44 @@ def fetch_subscription_info(area_name: str, api_key: str) -> pd.DataFrame:
             "page": page,
             "perPage": PAGE_SIZE,
         }
-        try:
-            r = requests.get(SUBSCRIPTION_URL, params=params, timeout=TIMEOUT)
-            if r.status_code != 200:
-                st.warning(f"청약홈 API 오류 (HTTP {r.status_code})")
-                break
+        success = False
+        data = {}
+        for attempt in range(3):
+            try:
+                r = requests.get(SUBSCRIPTION_URL, params=params, timeout=TIMEOUT)
+                if r.status_code == 200:
+                    data = r.json()
+                    success = True
+                    break
+                else:
+                    time.sleep(1)
+            except Exception:
+                time.sleep(1)
 
-            data = r.json()
-            total_count = data.get("totalCount", 0)
-            items = data.get("data", [])
-
-            if not items:
-                break
-
-            # 지역 필터링
-            if area_name and area_name != "전체":
-                items = [
-                    item for item in items
-                    if area_name in str(item.get("SUBSCRPT_AREA_CODE_NM", ""))
-                    or area_name in str(item.get("HSSPLY_ADRES", ""))
-                ]
-
-            all_items.extend(items)
-
-            if (page * PAGE_SIZE) >= total_count:
-                break
-            page += 1
-            time.sleep(REQUEST_DELAY)
-
-        except requests.exceptions.Timeout:
-            st.warning("청약홈 API 타임아웃. 수집된 데이터만 사용합니다.")
+        if not success:
+            st.warning(f"청약홈 API 호출 실패 (페이지: {page}) - 이전 수집된 데이터만 사용합니다.")
             break
-        except Exception as e:
-            st.warning(f"청약홈 API 오류: {e}")
+
+        total_count = data.get("totalCount", 0)
+        items = data.get("data", [])
+
+        if not items:
             break
+
+        # 지역 필터링
+        if area_name and area_name != "전체":
+            items = [
+                item for item in items
+                if area_name in str(item.get("SUBSCRPT_AREA_CODE_NM", ""))
+                or area_name in str(item.get("HSSPLY_ADRES", ""))
+            ]
+
+        all_items.extend(items)
+
+        if (page * PAGE_SIZE) >= total_count:
+            break
+        page += 1
+        time.sleep(REQUEST_DELAY)
 
     if not all_items:
         return pd.DataFrame()
